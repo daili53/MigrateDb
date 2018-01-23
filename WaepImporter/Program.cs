@@ -16,7 +16,7 @@ namespace WaepImporter
 
         public static string GetDateOrNull(this SqlDataReader reader, int ordinal)
         {
-            return reader.IsDBNull(ordinal) ? "NULL" : string.Format("'{0}'",reader.GetDateTime(ordinal).ToString("yyyy-MM-dd"));
+            return reader.IsDBNull(ordinal) ? "NULL" : string.Format("'{0}'", reader.GetDateTime(ordinal).ToString("yyyy-MM-dd"));
         }
 
         public static string GetBooleanOrNull(this SqlDataReader reader, int ordinal)
@@ -50,7 +50,7 @@ namespace WaepImporter
 
         static string targetConnStr = "Server=tcp:maestestwest.database.windows.net;Database=waepci;User ID=testci;Password=passw0rd~1;Trusted_Connection=False;Encrypt=True;MultipleActiveResultSets=True;";
 
-        delegate string GenerateQuery(SqlDataReader reader, string tableName); 
+        delegate string GenerateQuery(SqlDataReader reader, string tableName, SqlConnection con = null);
         static void Main(string[] args)
         {
             //ImportData("Addresses", AddressQuery);
@@ -58,10 +58,46 @@ namespace WaepImporter
             //ImportDefaultThresholdNotification();
             //Importclouds();
             //ImportData("BillableItems", BillableItemsQuery);
-            
+            //ImportData("ContactInformation", ContactInformationQuery);
+            //ImportData("EnrollmentContactInformation", EnrollmentContactInformationQuery);
+            //ImportData("DiscountGroups", DiscountGroupsQuery);
+            ImportData("EnrollmentCommitmentTerms", EnrollmentCommitmentTermsQuery);
         }
 
-        static string AddressQuery(SqlDataReader reader, string tableName)
+        static string EnrollmentCommitmentTermsQuery(SqlDataReader reader, string tableName, SqlConnection connect = null)
+        {
+            Dictionary<string, string> oldIds = new Dictionary<string, string>();
+            oldIds.Add("Enrollment", reader.GetIntOrNull(1));
+
+            string enrollmentId = GetNewIds(oldIds, connect)["Enrollment"];
+            var val = string.Format(@"Declare @r Table (id int); Insert into [dbo].[{0}] output Inserted.Id into @r values( {1}, {2}, {3}, {4}, {5}, {6}); select id from @r",
+                tableName,
+                enrollmentId,
+                reader.GetDateOrNull(2),  //TermStartDate
+                reader.GetDateOrNull(3),   //TermEndDate
+                reader.GetStringOrNull(4),  //FormattedTermDate
+                "getutcdate()",
+                "getutcdate()"
+                );
+            return val;
+        }
+        static string DiscountGroupsQuery(SqlDataReader reader, string tableName, SqlConnection con = null)
+        {
+            var val = string.Format(@"Declare @r Table (id int); Insert into [dbo].[{0}] output Inserted.Id into @r values( {1}, {2}, {3}, {4}, {5}, {6},{7}, {8}); select id from @r",
+                tableName,
+                reader.GetStringOrNull(1),
+                reader.GetIntOrNull(2),
+                reader.GetDecimalOrNull(3),
+                reader.GetIntOrNull(4),
+                "1",
+                "getutcdate()",
+                "1",
+                "getutcdate()"
+                );
+            return val;
+        }
+
+        static string AddressQuery(SqlDataReader reader, string tableName, SqlConnection con = null)
         {
             var val = string.Format(@"Insert into [dbo].[{0}] output Inserted.Id values( {1}, {2}, {3}, {4}, {5}, {6},{7}, {8}, {9}, {10});",
                 tableName,
@@ -78,7 +114,7 @@ namespace WaepImporter
             return val;
         }
 
-        static string BillableItemHybridSKUQuery(SqlDataReader reader, string tableName)
+        static string BillableItemHybridSKUQuery(SqlDataReader reader, string tableName, SqlConnection con = null)
         {
             var val = string.Format(@"Declare @r Table (id int); Insert into [dbo].[{0}] output Inserted.Id into @r values( {1}, {2}, {3}, {4}, {5}, {6},{7}, {8}, {9}, {10}); select id from @r",
                 tableName,
@@ -96,7 +132,7 @@ namespace WaepImporter
             return val;
         }
 
-        static string BillableItemsQuery(SqlDataReader reader, string tableName)
+        static string BillableItemsQuery(SqlDataReader reader, string tableName, SqlConnection con = null)
         {
 
             var val = string.Format(@"Declare @r Table (id int); Insert into [dbo].[{0}] output Inserted.Id into @r values ( {1}, {2}, {3}, {4}, {5}, {6},{7}, {8}, {9}, {10}, {11}, {12}, {13}, {14}, {15}, {16}, {17}, {18}, {19}, {20}, {21}, {22}, {23}, {24}, {25}, {26}, {27}, {28}, {29}, {30}, {31}, {32}, {33}, {34}); select id from @r",
@@ -140,6 +176,53 @@ namespace WaepImporter
             return val;
         }
 
+        static string ContactInformationQuery(SqlDataReader reader, string tableName, SqlConnection connect)
+        {
+            Dictionary<string, string> oldIds = new Dictionary<string, string>();
+            oldIds.Add("Addresses", reader.GetIntOrNull(18));
+
+            string addressId = GetNewIds(oldIds, connect)["Addresses"];
+            var val = string.Format(@"Insert into [dbo].[{0}] output Inserted.Id values( {1}, {2}, {3}, {4}, {5}, {6},{7}, {8}, {9}, {10}, {11}, {12}, {13}, {14}, {15}, {16}, {17}, {18});",
+                tableName,
+                reader.GetStringOrNull(1),  //Name
+                reader.GetStringOrNull(2),  //Department
+                reader.GetStringOrNull(3),   //FirstName
+                reader.GetStringOrNull(4),  //LastName
+                reader.GetStringOrNull(5),   //Email  
+                reader.GetStringOrNull(6),  //Phone
+                reader.GetStringOrNull(7),  //EmergencyNumber
+                reader.GetStringOrNull(8),   //Fax
+                reader.GetStringOrNull(9),  //Street
+                reader.GetStringOrNull(10),   //City 
+                reader.GetStringOrNull(11),  //State
+                reader.GetStringOrNull(12),  //PostalCode
+                "getutcdate()",
+                "1",
+                "getutcdate()",
+                "1",
+                reader.IsDBNull(17) ? "NULL" : "44",
+                addressId);
+            return val;
+        }
+
+        static string EnrollmentContactInformationQuery(SqlDataReader reader, string tableName, SqlConnection connect)
+        {
+            Dictionary<string, string> oldIds = new Dictionary<string, string>();
+            oldIds.Add("Enrollment", reader.GetIntOrNull(1));
+            oldIds.Add("ContactInformation", reader.GetIntOrNull(2));
+
+            var newIds = GetNewIds(oldIds, connect);
+            string enrollmentId = newIds["Enrollment"];
+            string contactId = newIds["ContactInformation"];
+
+            var val = string.Format(@"Insert into [dbo].[{0}] output Inserted.Id values( {1}, {2});",
+                tableName,
+                enrollmentId,  
+                contactId  
+                );
+            return val;
+        }
+
         static void ImportDefaultThresholdNotification()
         {
             SqlConnection tarConn = new SqlConnection(targetConnStr);
@@ -158,13 +241,39 @@ namespace WaepImporter
             tarConn.Close();
         }
 
+        static Dictionary<string, string> GetNewIds(Dictionary<string, string> oldIds, SqlConnection connect)
+        {
+            Dictionary<string, string> retVal = new Dictionary<string, string>();
+            foreach (KeyValuePair<string, string> entry in oldIds)
+            {
+                if (string.Compare(entry.Value, "NULL", true) == 0)
+                {
+                    retVal.Add(entry.Key, entry.Value);
+                }
+                else
+                {
+                    SqlCommand selectCmd = new SqlCommand(string.Format("select NewId from _Mapping where OldId = {0} and ObjName = '{1}'", entry.Value, entry.Key), connect);
+                    SqlDataReader reader = selectCmd.ExecuteReader();
+                    if (reader.HasRows)
+                    {
+                        while (reader.Read())
+                        {
+                            retVal.Add(entry.Key, reader.GetIntOrNull(0));
+                            break;
+                        }
+                    }
+                }
 
-        static void ImportData(string tableName, GenerateQuery fun )
+            }
+            return retVal;
+        }
+
+        static void ImportData(string tableName, GenerateQuery fun)
         {
             SqlConnection srcConn = new SqlConnection(sourceConnStr);
             SqlConnection tarConn = new SqlConnection(targetConnStr);
 
-            SqlCommand selectCmd = new SqlCommand(string.Format("select * from [dbo].[{0}] where id > 1", tableName), srcConn);
+            SqlCommand selectCmd = new SqlCommand(string.Format("select * from [dbo].[{0}] where id > 3", tableName), srcConn);
             srcConn.Open();
             SqlDataReader reader = selectCmd.ExecuteReader();
             using (System.IO.StreamWriter file = new System.IO.StreamWriter(@"C:\Users\lidai\Desktop\WaepImporter\WaepImporter\failures.txt", true))
@@ -172,13 +281,13 @@ namespace WaepImporter
                 if (reader.HasRows)
                 {
                     tarConn.Open();
-                    int failCount = 0; 
+                    int failCount = 0;
 
                     while (reader.Read())
                     {
                         try
                         {
-                            string query = fun(reader, tableName);
+                            string query = fun(reader, tableName, tarConn);
                             SqlCommand insertCmd = new SqlCommand(query, tarConn);
 
                             int oldId = reader.GetInt32(0);
@@ -186,6 +295,7 @@ namespace WaepImporter
 
                             SqlCommand insertMappingCmd = new SqlCommand(string.Format("insert into _Mapping values ('{0}', {1}, {2})", tableName, oldId, newId), tarConn);
                             insertMappingCmd.ExecuteNonQuery();
+                            Console.WriteLine(string.Format("table: {0}, oldId: {1}, newId: {2}", tableName, oldId, newId));
                         }
                         catch (Exception e)
                         {
