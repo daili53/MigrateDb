@@ -61,7 +61,144 @@ namespace WaepImporter
             //ImportData("ContactInformation", ContactInformationQuery);
             //ImportData("EnrollmentContactInformation", EnrollmentContactInformationQuery);
             //ImportData("DiscountGroups", DiscountGroupsQuery);
-            ImportData("EnrollmentCommitmentTerms", EnrollmentCommitmentTermsQuery);
+            //ImportData("EnrollmentCommitmentTerms", EnrollmentCommitmentTermsQuery);
+            //ImportData("BillableItemHybridSKUMapping", BillableItemHybridSKUMappingQuery);
+            //ImportData("DiscountEnrollments", DiscountEnrollmentsQuery);
+              ImportData("DiscountServices", DiscountServicesQuery);
+           // ImportData("AgreementParticipants", AgreementParticipantsQuery);
+           // ImportData("EnrollmentCommitmentTermsMarkup", EnrollmentCommitmentTermsMarkupQuery);
+            //ImportData("Departments", DepartmentsQuery);
+        }
+
+        //static string DepartmentsQuery(SqlDataReader reader, string tableName, SqlConnection connect = null)
+        //{
+
+        //}
+
+        static string EnrollmentCommitmentTermsMarkupQuery(SqlDataReader reader, string tableName, SqlConnection connect = null)
+        {
+            Dictionary<string, string> oldIds = new Dictionary<string, string>();
+            oldIds.Add("Enrollment", reader.GetIntOrNull(2));
+            oldIds.Add("EnrollmentCommitmentTerms", reader.GetIntOrNull(3));
+
+            var newIds = GetNewIds(oldIds, connect);
+            string enrollmentId = newIds["Enrollment"];
+            string enrollmentCommitmentTermsId = newIds["EnrollmentCommitmentTerms"];
+            var val = string.Format(@"Insert into [dbo].[{0}] output Inserted.Id values( {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9});",
+            tableName,
+            reader.GetIntOrNull(1),
+            enrollmentId,
+            enrollmentCommitmentTermsId,
+            reader.GetStringOrNull(4),
+            reader.GetIntOrNull(5),
+            "getutcdate()",
+            "1",
+            "getutcdate()",
+            "1"
+            );
+            return val;
+        }
+
+        static string AgreementParticipantsQuery(SqlDataReader reader, string tableName, SqlConnection connect = null)
+        {
+            Dictionary<string, string> oldIds = new Dictionary<string, string>();
+            oldIds.Add("Enrollment", reader.GetIntOrNull(1));
+            oldIds.Add("Organization", reader.GetIntOrNull(2));
+
+            var newIds = GetNewIds(oldIds, connect);
+            string enrollmentId = newIds["Enrollment"];
+            string organizationId = newIds["Organization"];
+            var val = string.Format(@"Declare @r Table (id int); Insert into [dbo].[{0}] output Inserted.Id into @r values( {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14}, {15}, {16}, {17}); select id from @r",
+            tableName,
+            enrollmentId,
+            organizationId,
+            reader.GetStringOrNull(3),   //AgreementParticipantKey
+            reader.GetStringOrNull(4),  //ParticipantType
+            reader.GetStringOrNull(5), //Email
+            reader.GetStringOrNull(6), //EmailContact
+            reader.GetIntOrNull(7), //StatusId
+            reader.GetStringOrNull(8), //PriceListCustomerTypeCode
+            reader.GetDateOrNull(9), //StartsOn
+            reader.GetDateOrNull(10), //EndsOn
+            reader.GetDateOrNull(11), //SourceModifiedDate
+            reader.GetIntOrNull(12), // Version
+            "getutcdate()",
+            "1",
+            "getutcdate()",
+            "1",
+            reader.GetStringOrNull(17) // AgreementParticipantMslId
+            );
+            return val;
+        }
+
+        static string DiscountServicesQuery(SqlDataReader reader, string tableName, SqlConnection connect = null)
+        {
+            Dictionary<string, string> oldIds = new Dictionary<string, string>();
+            oldIds.Add("DiscountGroups", reader.GetIntOrNull(1));
+            oldIds.Add("BillableItems", reader.GetIntOrNull(2));
+
+            var newIds = GetNewIds(oldIds, connect);
+            string groupId = newIds["DiscountGroups"];
+            string billableitemId = newIds["BillableItems"];
+            var val = string.Format(@"Declare @r Table (id int); Insert into [dbo].[{0}] output Inserted.Id into @r values( {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}); select id from @r",
+            tableName,
+            groupId,
+            billableitemId,
+            reader.GetIntOrNull(3),   //Rank
+            reader.GetDecimalOrNull(4),  //Discount
+            reader.GetDecimalOrNull(5), //Multiplier
+            reader.GetDateOrNull(6), //StartsOn
+            reader.GetDateOrNull(7), //EndsOn
+            "1",
+            "getutcdate()",
+            "1",
+            "getutcdate()"
+            );
+            return val;
+        }
+        static string DiscountEnrollmentsQuery(SqlDataReader reader, string tableName, SqlConnection connect = null)
+        {
+            Dictionary<string, string> oldIds = new Dictionary<string, string>();
+            oldIds.Add("DiscountGroups", reader.GetIntOrNull(1));
+            oldIds.Add("Enrollment", reader.GetIntOrNull(2));
+
+            var newIds = GetNewIds(oldIds, connect);
+            string groupId = newIds["DiscountGroups"];
+            string enrollmentId = newIds["Enrollment"];
+            var val = string.Format(@"Insert into [dbo].[{0}] output Inserted.Id values( {1}, {2}, {3}, {4}, {5}, {6});",
+            tableName,
+            groupId,
+            enrollmentId,
+            "1",
+            "getutcdate()",
+            "1",
+            "getutcdate()"
+            );
+            return val;
+        }
+
+        static string BillableItemHybridSKUMappingQuery(SqlDataReader reader, string tableName, SqlConnection connect = null)
+        {
+            Dictionary<string, string> oldIds = new Dictionary<string, string>();
+            oldIds.Add("BillableItemHybridSKU", reader.GetIntOrNull(1));
+            oldIds.Add("BillableItems", reader.GetIntOrNull(2));
+
+            var newIds = GetNewIds(oldIds, connect);
+            string billableItemHybridSKUId = newIds["BillableItemHybridSKU"];
+            string billableItemsId = newIds["BillableItems"];
+            var val = string.Format(@"Declare @r Table (id int); Insert into [dbo].[{0}] output Inserted.Id into @r values( {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}); select id from @r",
+            tableName,
+            billableItemHybridSKUId,
+            billableItemsId,  
+            reader.GetDecimalOrNull(3),   //IncludedRatio
+            reader.GetDateOrNull(4),  //StartsOn
+            reader.GetDateOrNull(5), //EndsOn
+            "1",
+            "getutcdate()",
+            "1",
+            "getutcdate()"
+            );
+            return val;
         }
 
         static string EnrollmentCommitmentTermsQuery(SqlDataReader reader, string tableName, SqlConnection connect = null)
@@ -273,10 +410,10 @@ namespace WaepImporter
             SqlConnection srcConn = new SqlConnection(sourceConnStr);
             SqlConnection tarConn = new SqlConnection(targetConnStr);
 
-            SqlCommand selectCmd = new SqlCommand(string.Format("select * from [dbo].[{0}] where id > 3", tableName), srcConn);
+            SqlCommand selectCmd = new SqlCommand(string.Format("select * from [dbo].[{0}] where id > 20", tableName), srcConn);
             srcConn.Open();
             SqlDataReader reader = selectCmd.ExecuteReader();
-            using (System.IO.StreamWriter file = new System.IO.StreamWriter(@"C:\Users\lidai\Desktop\WaepImporter\WaepImporter\failures.txt", true))
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter(@"D:\MigrateDb\MigrateDb\failures.txt", true))
             {
                 if (reader.HasRows)
                 {
@@ -305,7 +442,7 @@ namespace WaepImporter
                         }
                     }
                     tarConn.Close();
-                    file.WriteLine(string.Format("Total failure counts: {0}", failCount));
+                    file.WriteLine(string.Format("Table: {0}, Total failure counts: {1}", tableName, failCount));
                 }
             }
             srcConn.Close();
