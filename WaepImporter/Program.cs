@@ -48,6 +48,11 @@ namespace WaepImporter
         {
             return reader.IsDBNull(ordinal) ? "NULL" : reader.GetInt64(ordinal).ToString();
         }
+
+        public static string GetTinyIntOrNull(this SqlDataReader reader, int ordinal)
+        {
+            return reader.IsDBNull(ordinal) ? "NULL" : reader.GetByte(ordinal).ToString();
+        }
     }
     class Program
     {
@@ -71,15 +76,120 @@ namespace WaepImporter
             //ImportData("DiscountEnrollments", DiscountEnrollmentsQuery);
              // ImportData("DiscountServices", DiscountServicesQuery);
            // ImportData("AgreementParticipants", AgreementParticipantsQuery);
-           // ImportData("EnrollmentCommitmentTermsMarkup", EnrollmentCommitmentTermsMarkupQuery);
+            //ImportData("EnrollmentCommitmentTermsMarkup", EnrollmentCommitmentTermsMarkupQuery);
             //ImportData("Departments", DepartmentsQuery);    //todo : need update technicalcontactid
             //ImportData("Accounts", AccountsQuery);
             //ImportData("AccountContactInformation", AccountContactInformationQuery);
             //ImportData("CustomerFeedback", CustomerFeedbackQuery);
-            //todo: ImportData("DepartmentNotifications", DepartmentNotificationsQuery);
+             ImportData("DepartmentNotifications", DepartmentNotificationsQuery);
             //ImportData("DepartmentAccounts", DepartmentAccountsQuery);
             //ImportData("EaCommerceAccounts", EaCommerceAccountsQuery);
-            ImportData("EnrollmentDepartments", EnrollmentDepartmentsQuery);
+            //ImportData("EnrollmentDepartments", EnrollmentDepartmentsQuery);
+            //ImportData("EnrollmentDiscounts", EnrollmentDiscountsQuery);
+            //ImportData("EnrollmentDiscountVersions", EnrollmentDiscountVersionsQuery);
+            //ImportData("AccountsSubscriptions", AccountsSubscriptionsQuery);
+        }
+
+        static string DepartmentNotificationsQuery(SqlDataReader reader, string tableName, SqlConnection connect = null)
+        {
+            Dictionary<string, string> oldIds = new Dictionary<string, string>();
+            oldIds.Add("Departments", reader.GetIntOrNull(1));
+
+            var newIds = GetNewIds(oldIds, connect);
+            string departmentId = newIds["Departments"];
+            var val = string.Format(@"Insert into [dbo].[{0}] output Inserted.Id values( {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9});",
+            tableName,
+            departmentId,
+            reader.GetDecimalOrNull(2),  //UsageAmount
+            reader.GetIntOrNull(3),   //ThresholdPct
+            reader.GetIntOrNull(4),   //MessageId
+            reader.GetBooleanOrNull(5),    //IsDeleted
+            "getutcdate()",
+            "1",
+            "getutcdate()",
+            "1"
+            );
+            return val;
+        }
+
+        static string AccountsSubscriptionsQuery(SqlDataReader reader, string tableName, SqlConnection connect = null)
+        {
+            Dictionary<string, string> oldIds = new Dictionary<string, string>();
+            oldIds.Add("Accounts", reader.GetIntOrNull(1));
+            oldIds.Add("Subscriptions", reader.GetIntOrNull(2));
+
+            var newIds = GetNewIds(oldIds, connect);
+            string accountId = newIds["Accounts"];
+            string subscriptionId = newIds["Subscriptions"];
+            var val = string.Format(@"Declare @r Table (id int); Insert into [dbo].[{0}] output Inserted.Id into @r values( {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}); select id from @r",
+            tableName,
+            accountId,
+            subscriptionId,
+            reader.GetDateOrNull(3),   //StartsOn
+            reader.GetDateOrNull(4),  //EndsOn
+            "getutcdate()",
+            "1",
+            "getutcdate()",
+            "1"
+            );
+            return val;
+        }
+
+        static string EnrollmentDiscountsQuery(SqlDataReader reader, string tableName, SqlConnection connect = null)
+        {
+            Dictionary<string, string> oldIds = new Dictionary<string, string>();
+            oldIds.Add("Enrollment", reader.GetIntOrNull(2));
+
+            var newIds = GetNewIds(oldIds, connect);
+            string enrollmentId = newIds["Enrollment"];
+            var val = string.Format(@"Declare @r Table (id int); Insert into [dbo].[{0}] output Inserted.Id into @r values( {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}); select id from @r",
+            tableName,
+            reader.GetStringOrNull(1),   //Name
+            enrollmentId,
+            reader.GetIntOrNull(3),   //ExceptionListId
+            reader.GetTinyIntOrNull(4),  //AdjustmentTypeId
+            reader.GetDateOrNull(5),    //StartsOn,
+            reader.GetDateOrNull(6),    //EndsOn,
+            reader.GetDecimalOrNull(7),    //DiscountRate
+            reader.GetIntOrNull(8),    //StatusId
+            reader.GetIntOrNull(9),    //Version
+            "getutcdate()",
+            "getutcdate()",
+            "1",
+            "1"
+            );
+            return val;
+        }
+        static string EnrollmentDiscountVersionsQuery(SqlDataReader reader, string tableName, SqlConnection connect = null)
+        {
+            Dictionary<string, string> oldIds = new Dictionary<string, string>();
+            oldIds.Add("EnrollmentDiscounts", reader.GetIntOrNull(1));
+            oldIds.Add("Users", reader.GetIntOrNull(10));
+
+            var newIds = GetNewIds(oldIds, connect);
+            string enrollmentDiscountId = newIds["EnrollmentDiscounts"];
+            string userId = newIds["Users"];
+            var val = string.Format(@"Declare @r Table (id int); Insert into [dbo].[{0}] output Inserted.Id into @r values( {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14}, {15}, {16}, {17}); select id from @r",
+            tableName,
+            enrollmentDiscountId,
+            reader.GetIntOrNull(2),   //ExceptionListId
+            reader.GetDateOrNull(3),   //StartsOn
+            reader.GetDateOrNull(4),  //EndsOn
+            reader.GetDecimalOrNull(5),    //DiscountRate
+            reader.GetIntOrNull(6),    //MajorVersion
+            reader.GetIntOrNull(7),    //MinorVersion
+            reader.GetIntOrNull(8),    //WorkflowStatus
+            reader.GetGuidOrNull(9),    //WorkflowInstanceId
+            userId,    //ReviewedBy
+            reader.GetStringOrNull(11),    //ReviewComments
+            reader.GetStringOrNull(12),    //TFSHistory
+            "getutcdate()",
+            "getutcdate()",
+            "1",
+            "1",
+            reader.GetIntOrNull(17)//Version
+            );
+            return val;
         }
 
         static string EnrollmentDepartmentsQuery(SqlDataReader reader, string tableName, SqlConnection connect = null)
@@ -254,15 +364,17 @@ namespace WaepImporter
         static string EnrollmentCommitmentTermsMarkupQuery(SqlDataReader reader, string tableName, SqlConnection connect = null)
         {
             Dictionary<string, string> oldIds = new Dictionary<string, string>();
+            oldIds.Add("Organization", reader.GetIntOrNull(1));
             oldIds.Add("Enrollment", reader.GetIntOrNull(2));
             oldIds.Add("EnrollmentCommitmentTerms", reader.GetIntOrNull(3));
 
             var newIds = GetNewIds(oldIds, connect);
+            string partnerId = newIds["Organization"];
             string enrollmentId = newIds["Enrollment"];
             string enrollmentCommitmentTermsId = newIds["EnrollmentCommitmentTerms"];
             var val = string.Format(@"Insert into [dbo].[{0}] output Inserted.Id values( {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9});",
             tableName,
-            reader.GetIntOrNull(1),
+            partnerId,
             enrollmentId,
             enrollmentCommitmentTermsId,
             reader.GetStringOrNull(4),

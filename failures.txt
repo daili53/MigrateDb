@@ -1,2 +1,64 @@
 failed to import id 6865 of table EnrollmentCommitmentTerms, The given key was not present in the dictionary.
 Total failure counts: 1
+failed to import id 6071 of table Accounts, Cannot insert duplicate key row in object 'dbo.Accounts' with unique index 'IX_Accounts_WindowsLiveId_IsOrgIdPUID'. The duplicate key value is (haojuns@yungoal.com, 0).
+The statement has been terminated.
+failed to import id 11555 of table Accounts, Cannot insert duplicate key row in object 'dbo.Accounts' with unique index 'IX_Accounts_WindowsLiveId_IsOrgIdPUID'. The duplicate key value is (azhang@microsoft.com, 1).
+The statement has been terminated.
+failed to import id 11556 of table Accounts, Incorrect syntax near 's'.
+Unclosed quotation mark after the character string ', 30, 1, getutcdate(), 1, getutcdate(), 1, 1570, NULL, NULL, NULL, 1, 294314, NULL, NULL); select id from @r'.
+failed to import id 12661 of table Accounts, Violation of UNIQUE KEY constraint 'UQ_dbo_Accounts_WindowsLiveId_AccountPUID_StatusId'. Cannot insert duplicate key in object 'dbo.Accounts'. The duplicate key value is (ricky.yin@avepoint.com, <NULL>, 30).
+The statement has been terminated.
+failed to import id 12662 of table Accounts, Cannot insert duplicate key row in object 'dbo.Accounts' with unique index 'IX_Accounts_WindowsLiveId_IsOrgIdPUID'. The duplicate key value is (ricky@avepoint.com, 1).
+The statement has been terminated.
+failed to import id 12666 of table Accounts, Cannot insert duplicate key row in object 'dbo.Accounts' with unique index 'IX_Accounts_WindowsLiveId_IsOrgIdPUID'. The duplicate key value is (tswang@avepoint.com, 1).
+The statement has been terminated.
+failed to import id 12667 of table Accounts, Cannot insert duplicate key row in object 'dbo.Accounts' with unique index 'IX_Accounts_WindowsLiveId_IsOrgIdPUID'. The duplicate key value is (lzhang@avepoint.com, 1).
+The statement has been terminated.
+failed to import id 22962 of table Accounts, Violation of UNIQUE KEY constraint 'UQ_dbo_Accounts_WindowsLiveId_AccountPUID_StatusId'. Cannot insert duplicate key in object 'dbo.Accounts'. The duplicate key value is (test@test.com, <NULL>, 30).
+The statement has been terminated.
+failed to import id 25332 of table Accounts, Cannot insert duplicate key row in object 'dbo.Accounts' with unique index 'IX_Accounts_WindowsLiveId_IsOrgIdPUID'. The duplicate key value is (edwin_chou@htc.com, 1).
+The statement has been terminated.
+failed to import id 28793 of table Accounts, Cannot insert duplicate key row in object 'dbo.Accounts' with unique index 'IX_Accounts_WindowsLiveId_IsOrgIdPUID'. The duplicate key value is (alicia_tan@htc.com, 1).
+The statement has been terminated.
+failed to import id 30767 of table Accounts, Cannot insert duplicate key row in object 'dbo.Accounts' with unique index 'IX_Accounts_WindowsLiveId_IsOrgIdPUID'. The duplicate key value is (adm_brumsenh@akzonobel.com, 1).
+The statement has been terminated.
+failed to import id 31125 of table Accounts, Cannot insert duplicate key row in object 'dbo.Accounts' with unique index 'IX_Accounts_WindowsLiveId_IsOrgIdPUID'. The duplicate key value is (admin@chinasouthernairlines.partner.onmschina.cn, 1).
+The statement has been terminated.
+failed to import id 31840 of table Accounts, Cannot insert duplicate key row in object 'dbo.Accounts' with unique index 'IX_Accounts_WindowsLiveId_IsOrgIdPUID'. The duplicate key value is (zhangzongling@chinasouthernairlines.partner.onmschina.cn, 1).
+The statement has been terminated.
+failed to import id 31841 of table Accounts, Cannot insert duplicate key row in object 'dbo.Accounts' with unique index 'IX_Accounts_WindowsLiveId_IsOrgIdPUID'. The duplicate key value is (linwulian@chinasouthernairlines.partner.onmschina.cn, 1).
+The statement has been terminated.
+failed to import id 32117 of table Accounts, Cannot insert duplicate key row in object 'dbo.Accounts' with unique index 'IX_Accounts_WindowsLiveId_IsOrgIdPUID'. The duplicate key value is (christoph.berthoud@vista.co, 1).
+The statement has been terminated.
+Table: Accounts, Total failure counts: 15
+failed to import id 390 of table EaCommerceAccounts, The given key was not present in the dictionary.
+failed to import id 391 of table EaCommerceAccounts, The given key was not present in the dictionary.
+failed to import id 6822 of table EaCommerceAccounts, The given key was not present in the dictionary.
+failed to import id 7119 of table EaCommerceAccounts, The given key was not present in the dictionary.
+failed to import id 7884 of table EaCommerceAccounts, The given key was not present in the dictionary.
+failed to import id 8386 of table EaCommerceAccounts, The given key was not present in the dictionary.
+failed to import id 8387 of table EaCommerceAccounts, The given key was not present in the dictionary.
+Table: EaCommerceAccounts, Total failure counts: 7
+failed to import id 8049 of table DepartmentAccounts, The given key was not present in the dictionary.
+failed to import id 8532 of table DepartmentAccounts, The given key was not present in the dictionary.
+failed to import id 8533 of table DepartmentAccounts, The given key was not present in the dictionary.
+failed to import id 8534 of table DepartmentAccounts, The given key was not present in the dictionary.
+failed to import id 8537 of table DepartmentAccounts, The given key was not present in the dictionary.
+failed to import id 8555 of table DepartmentAccounts, The given key was not present in the dictionary.
+failed to import id 9172 of table DepartmentAccounts, The given key was not present in the dictionary.
+failed to import id 9219 of table DepartmentAccounts, The given key was not present in the dictionary.
+failed to import id 9220 of table DepartmentAccounts, The given key was not present in the dictionary.
+failed to import id 9221 of table DepartmentAccounts, The given key was not present in the dictionary.
+failed to import id 9222 of table DepartmentAccounts, The given key was not present in the dictionary.
+failed to import id 9223 of table DepartmentAccounts, The given key was not present in the dictionary.
+failed to import id 9224 of table DepartmentAccounts, The given key was not present in the dictionary.
+failed to import id 9225 of table DepartmentAccounts, The given key was not present in the dictionary.
+failed to import id 9226 of table DepartmentAccounts, The given key was not present in the dictionary.
+failed to import id 9227 of table DepartmentAccounts, The given key was not present in the dictionary.
+failed to import id 9228 of table DepartmentAccounts, The given key was not present in the dictionary.
+failed to import id 9229 of table DepartmentAccounts, The given key was not present in the dictionary.
+failed to import id 9230 of table DepartmentAccounts, The given key was not present in the dictionary.
+failed to import id 9231 of table DepartmentAccounts, The given key was not present in the dictionary.
+failed to import id 9232 of table DepartmentAccounts, The given key was not present in the dictionary.
+failed to import id 9233 of table DepartmentAccounts, The given key was not present in the dictionary.
+Table: DepartmentAccounts, Total failure counts: 22
