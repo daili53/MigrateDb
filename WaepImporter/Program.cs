@@ -11,7 +11,7 @@ namespace WaepImporter
     {
         public static string GetStringOrNull(this SqlDataReader reader, int ordinal)
         {
-            return reader.IsDBNull(ordinal) ? "NULL" : "'" + reader.GetString(ordinal) + "'";
+            return reader.IsDBNull(ordinal) ? "NULL" : "N'" + reader.GetString(ordinal).Replace("'","'''") + "'";
         }
 
         public static string GetDateOrNull(this SqlDataReader reader, int ordinal)
@@ -74,20 +74,122 @@ namespace WaepImporter
             //ImportData("EnrollmentCommitmentTerms", EnrollmentCommitmentTermsQuery);
             //ImportData("BillableItemHybridSKUMapping", BillableItemHybridSKUMappingQuery);
             //ImportData("DiscountEnrollments", DiscountEnrollmentsQuery);
-             // ImportData("DiscountServices", DiscountServicesQuery);
-           // ImportData("AgreementParticipants", AgreementParticipantsQuery);
+            // ImportData("DiscountServices", DiscountServicesQuery);
+            // ImportData("AgreementParticipants", AgreementParticipantsQuery);
             //ImportData("EnrollmentCommitmentTermsMarkup", EnrollmentCommitmentTermsMarkupQuery);
             //ImportData("Departments", DepartmentsQuery);    //todo : need update technicalcontactid
             //ImportData("Accounts", AccountsQuery);
             //ImportData("AccountContactInformation", AccountContactInformationQuery);
             //ImportData("CustomerFeedback", CustomerFeedbackQuery);
-             ImportData("DepartmentNotifications", DepartmentNotificationsQuery);
+            //ImportData("DepartmentNotifications", DepartmentNotificationsQuery);
             //ImportData("DepartmentAccounts", DepartmentAccountsQuery);
             //ImportData("EaCommerceAccounts", EaCommerceAccountsQuery);
             //ImportData("EnrollmentDepartments", EnrollmentDepartmentsQuery);
             //ImportData("EnrollmentDiscounts", EnrollmentDiscountsQuery);
             //ImportData("EnrollmentDiscountVersions", EnrollmentDiscountVersionsQuery);
             //ImportData("AccountsSubscriptions", AccountsSubscriptionsQuery);
+            //ImportData("DataIntegrityQueue", DataIntegrityQueueQuery);
+
+            //ImportData("Subscriptions", SubscriptionsQuery);
+            //UpdateItem("Subscriptions", "Name", 748048);
+            //UpdateItem("Departments", "Name", 63714);
+            //UpdateItem("Departments", "CostCenter", 63714);
+            //UpdateItem("CustomerFeedback", "body", 1240);
+            //UpdateItem("CustomerFeedback", "Title", 1240);
+        }
+
+        static void UpdateItem(string table, string item, int index)
+        {
+            SqlConnection srcConn = new SqlConnection(sourceConnStr);
+            SqlConnection tarConn = new SqlConnection(targetConnStr);
+
+            SqlCommand selectCmd = new SqlCommand(string.Format("select Id from [dbo].[{0}] where id >= {1} and {2} like '%?%' order by id", table, index, item), tarConn);
+            srcConn.Open();
+            tarConn.Open();
+            SqlDataReader reader = selectCmd.ExecuteReader();
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter(@"C:\Users\lidai\Desktop\WaepImporter\WaepImporter\failuresUpdate.txt", true))
+            {
+                if (reader.HasRows)
+                {
+                    int failCount = 0;
+
+                    while (reader.Read())
+                    {
+                        long id = (table == "Subscriptions") ? reader.GetInt64(0) : (long)reader.GetInt32(0);
+                        try
+                        {
+                            UpdateNamePerLine(id, table, item, tarConn, srcConn);
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine(string.Format("failed to update id {0} of table {1}, item {2},  {3}", id, table, item, e.Message));
+                            file.WriteLine(string.Format("failed to import id {0} of table {1}, item {2}, {3}", id, table, item, e.Message));
+                            failCount++;
+                        }
+                    }
+
+                    file.WriteLine(string.Format("Table: {0}, item: {1}, Total failure counts: {2}", table, item, failCount));
+                }
+            }
+            tarConn.Close();
+            srcConn.Close();
+        }
+        static string SubscriptionsQuery(SqlDataReader reader, string tableName, SqlConnection connect = null)
+        {
+            Dictionary<string, string> oldIds = new Dictionary<string, string>();
+            oldIds.Add("Accounts", reader.GetIntOrNull(4));
+            oldIds.Add("EaCommerceAccounts", reader.GetIntOrNull(18));
+
+            var newIds = GetNewIds(oldIds, connect);
+            string accountId = newIds["Accounts"];
+            string eaCommerceAccountId = newIds["EaCommerceAccounts"];
+            var val = string.Format(@"Declare @r Table (id int); Insert into [dbo].[{0}] output Inserted.Id into @r values( {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14}, {15}, {16}, {17}, {18}, {19}, {20}, {21}); select id from @r",
+            tableName,
+            reader.GetStringOrNull(1),   //Name
+            reader.GetDateOrNull(2),   //StartDate
+            reader.GetDateOrNull(3),  //EndDate
+            accountId,
+            reader.GetStringOrNull(5),    //WindowsLiveId
+            reader.GetBigIntOrNull(6),    //SubscriptionId
+            reader.GetGuidOrNull(7),    //MOCPSubscriptionGuid
+            reader.GetStringOrNull(8),    //OfferName
+            reader.GetIntOrNull(9),    //StatusId
+            "getutcdate()",
+            "1",
+            "getutcdate()",
+            "1",
+            reader.GetDateOrNull(14),   //BisLastUpdated
+            reader.GetStringOrNull(15),   //SuspensionReason
+            reader.GetIntOrNull(16),    //TransferState
+            reader.GetGuidOrNull(17),    //OMSSubscriptionGuid
+            eaCommerceAccountId,
+            reader.GetIntOrNull(19), //Version
+            reader.GetDateOrNull(20),//LastUsageDay
+            reader.GetStringOrNull(21) //CostCenter
+            );
+            return val;
+        }
+
+        static string DataIntegrityQueueQuery(SqlDataReader reader, string tableName, SqlConnection connect = null)
+        {
+            Dictionary<string, string> oldIds = new Dictionary<string, string>();
+            oldIds.Add("Enrollment", reader.GetIntOrNull(1));
+
+            var newIds = GetNewIds(oldIds, connect);
+            string enrollmentId = newIds["Enrollment"];
+            string temp = reader.GetIntOrNull(3);
+            string definitionId = (temp != "1081" && temp != "1083") ? temp : (temp == "1081" ? "82" : "84");
+            var val = string.Format(@"Insert into [dbo].[{0}] output Inserted.Id values( {1}, {2}, {3}, {4}, {5}, {6}, {7});",
+            tableName,
+            enrollmentId,
+            reader.GetStringOrNull(2),  //Key
+            definitionId,   //DataIntegrityDefinitionId
+            reader.GetStringOrNull(4),   //Comments
+            "1",
+            "getutcdate()",
+            reader.GetIntOrNull(7)   //StatusId
+            );
+            return val;
         }
 
         static string DepartmentNotificationsQuery(SqlDataReader reader, string tableName, SqlConnection connect = null)
@@ -116,7 +218,7 @@ namespace WaepImporter
         {
             Dictionary<string, string> oldIds = new Dictionary<string, string>();
             oldIds.Add("Accounts", reader.GetIntOrNull(1));
-            oldIds.Add("Subscriptions", reader.GetIntOrNull(2));
+            oldIds.Add("Subscriptions", reader.GetBigIntOrNull(2));
 
             var newIds = GetNewIds(oldIds, connect);
             string accountId = newIds["Accounts"];
@@ -250,7 +352,7 @@ namespace WaepImporter
             string departmentId = newIds["Departments"];
             var val = string.Format(@"Declare @r Table (id int); Insert into [dbo].[{0}] output Inserted.Id into @r values( {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}); select id from @r",
             tableName,
-            departmentId,  
+            departmentId,
             accountId,
             reader.GetDateOrNull(3),   //StartsOn
             reader.GetDateOrNull(4),  //EndsOn
@@ -477,7 +579,7 @@ namespace WaepImporter
             var val = string.Format(@"Declare @r Table (id int); Insert into [dbo].[{0}] output Inserted.Id into @r values( {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}); select id from @r",
             tableName,
             billableItemHybridSKUId,
-            billableItemsId,  
+            billableItemsId,
             reader.GetDecimalOrNull(3),   //IncludedRatio
             reader.GetDateOrNull(4),  //StartsOn
             reader.GetDateOrNull(5), //EndsOn
@@ -642,8 +744,8 @@ namespace WaepImporter
 
             var val = string.Format(@"Insert into [dbo].[{0}] output Inserted.Id values( {1}, {2});",
                 tableName,
-                enrollmentId,  
-                contactId  
+                enrollmentId,
+                contactId
                 );
             return val;
         }
@@ -693,12 +795,41 @@ namespace WaepImporter
             return retVal;
         }
 
+        static void UpdateNamePerLine(long newId, string table, string item, SqlConnection connect, SqlConnection mcConnect)
+        {
+            string oldId = string.Empty;
+            SqlCommand selectCmd = new SqlCommand(string.Format("select OldId from _Mapping where NewId = {0} and ObjName = '{1}'", newId, table), connect);
+            SqlDataReader reader = selectCmd.ExecuteReader();
+            if (reader.HasRows)
+            {
+                while (reader.Read())
+                {
+                    oldId = reader.GetIntOrNull(0);
+                    break;
+                }
+            }
+            string value = string.Empty;
+            SqlCommand cmd = new SqlCommand(string.Format("select {0} from {1} where id = {2}", item, table, oldId), mcConnect);
+            reader = cmd.ExecuteReader();
+            if (reader.HasRows)
+            {
+                while (reader.Read())
+                {
+                    value = reader.GetStringOrNull(0);
+                    break;
+                }
+            }
+            SqlCommand updateCmd = new SqlCommand(string.Format("Update {0} set {1} = {2} where id = {3}", table, item, value, newId), connect);
+            updateCmd.ExecuteReader();
+
+        }
+
         static void ImportData(string tableName, GenerateQuery fun)
         {
             SqlConnection srcConn = new SqlConnection(sourceConnStr);
             SqlConnection tarConn = new SqlConnection(targetConnStr);
 
-            SqlCommand selectCmd = new SqlCommand(string.Format("select top 1 * from [dbo].[{0}]", tableName), srcConn);
+            SqlCommand selectCmd = new SqlCommand(string.Format("select * from [dbo].[{0}] where id > 12867 and id < 14697 order by id", tableName), srcConn);
             srcConn.Open();
             SqlDataReader reader = selectCmd.ExecuteReader();
             using (System.IO.StreamWriter file = new System.IO.StreamWriter(@"C:\Users\lidai\Desktop\WaepImporter\WaepImporter\failures.txt", true))
@@ -715,7 +846,7 @@ namespace WaepImporter
                             string query = fun(reader, tableName, tarConn);
                             SqlCommand insertCmd = new SqlCommand(query, tarConn);
 
-                            int oldId = reader.GetInt32(0);
+                            int oldId = (tableName == "DataIntegrityQueue" || tableName == "Subscriptions") ? int.Parse(reader.GetBigIntOrNull(0)) : reader.GetInt32(0);
                             int newId = int.Parse(insertCmd.ExecuteScalar().ToString());
 
                             SqlCommand insertMappingCmd = new SqlCommand(string.Format("insert into _Mapping values ('{0}', {1}, {2})", tableName, oldId, newId), tarConn);
@@ -724,8 +855,9 @@ namespace WaepImporter
                         }
                         catch (Exception e)
                         {
-                            Console.WriteLine(string.Format("failed to import id {0} of table {1}, {2}", reader.GetInt32(0), tableName, e.Message));
-                            file.WriteLine(string.Format("failed to import id {0} of table {1}, {2}", reader.GetInt32(0), tableName, e.Message));
+                            int oldId = (tableName == "DataIntegrityQueue" || tableName == "Subscriptions") ? int.Parse(reader.GetBigIntOrNull(0)) : reader.GetInt32(0);
+                            Console.WriteLine(string.Format("failed to import id {0} of table {1}, {2}", oldId, tableName, e.Message));
+                            file.WriteLine(string.Format("failed to import id {0} of table {1}, {2}", oldId, tableName, e.Message));
                             failCount++;
                         }
                     }
