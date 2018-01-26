@@ -11,7 +11,7 @@ namespace WaepImporter
     {
         public static string GetStringOrNull(this SqlDataReader reader, int ordinal)
         {
-            return reader.IsDBNull(ordinal) ? "NULL" : "N'" + reader.GetString(ordinal).Replace("'","'''") + "'";
+            return reader.IsDBNull(ordinal) ? "NULL" : "N'" + reader.GetString(ordinal).Replace("'","''") + "'";
         }
 
         public static string GetDateOrNull(this SqlDataReader reader, int ordinal)
@@ -96,6 +96,10 @@ namespace WaepImporter
             //UpdateItem("Departments", "CostCenter", 63714);
             //UpdateItem("CustomerFeedback", "body", 1240);
             //UpdateItem("CustomerFeedback", "Title", 1240);
+
+            //ImportData("Subscriptions", SubscriptionsQuery, new List<int>() { 211633, 211634, 211635, 211636, 211637, 211638, 211639, 209587, 209589, 209592, 209594, 209599, 209610});
+            //ImportData("Subscriptions", SubscriptionsQuery, new List<int>() { 211632});
+            //ImportData("AccountsSubscriptions", AccountsSubscriptionsQuery, new List<int>() { 17352, 17354, 17357, 17359, 17364, 17375, 19395, 19396, 19397, 19398, 19399, 19400, 19401, 19402 });
         }
 
         static void UpdateItem(string table, string item, int index)
@@ -824,12 +828,21 @@ namespace WaepImporter
 
         }
 
-        static void ImportData(string tableName, GenerateQuery fun)
+        static void ImportData(string tableName, GenerateQuery fun, List<int> ids = null)
         {
             SqlConnection srcConn = new SqlConnection(sourceConnStr);
             SqlConnection tarConn = new SqlConnection(targetConnStr);
 
-            SqlCommand selectCmd = new SqlCommand(string.Format("select * from [dbo].[{0}] where id > 12867 and id < 14697 order by id", tableName), srcConn);
+            SqlCommand selectCmd;
+            if (ids == null)
+            {
+                selectCmd = new SqlCommand(string.Format("select * from [dbo].[{0}] where id > 12867 and id < 14697 order by id", tableName), srcConn);
+            }
+            else
+            {
+                selectCmd = new SqlCommand(string.Format("select * from [dbo].[{0}] where id in ({1})", tableName, string.Join(",", ids)), srcConn);
+            }
+            
             srcConn.Open();
             SqlDataReader reader = selectCmd.ExecuteReader();
             using (System.IO.StreamWriter file = new System.IO.StreamWriter(@"C:\Users\lidai\Desktop\WaepImporter\WaepImporter\failures.txt", true))
