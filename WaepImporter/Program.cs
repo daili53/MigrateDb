@@ -4,92 +4,150 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace WaepImporter
 {
-    public static class DataReaderExtensions
-    {
-        public static string GetStringOrNull(this SqlDataReader reader, int ordinal)
-        {
-            return reader.IsDBNull(ordinal) ? "NULL" : "N'" + reader.GetString(ordinal).Replace("'","''") + "'";
-        }
-
-        public static string GetDateOrNull(this SqlDataReader reader, int ordinal)
-        {
-            return reader.IsDBNull(ordinal) ? "NULL" : string.Format("'{0}'", reader.GetDateTime(ordinal).ToString("yyyy-MM-dd"));
-        }
-
-        public static string GetBooleanOrNull(this SqlDataReader reader, int ordinal)
-        {
-            return reader.IsDBNull(ordinal) ? "NULL" : Convert.ToInt16(reader.GetBoolean(ordinal)).ToString();
-        }
-
-        public static string GetDecimalOrNull(this SqlDataReader reader, int ordinal)
-        {
-            return reader.IsDBNull(ordinal) ? "NULL" : reader.GetDecimal(ordinal).ToString();
-        }
-
-        public static string GetGuidOrNull(this SqlDataReader reader, int ordinal)
-        {
-            return reader.IsDBNull(ordinal) ? "NULL" : "'" + reader.GetGuid(ordinal) + "'";
-        }
-
-        public static string GetIntOrNull(this SqlDataReader reader, int ordinal)
-        {
-            return reader.IsDBNull(ordinal) ? "NULL" : reader.GetInt32(ordinal).ToString();
-        }
-
-        public static string GetSmallIntOrNull(this SqlDataReader reader, int ordinal)
-        {
-            return reader.IsDBNull(ordinal) ? "NULL" : reader.GetInt16(ordinal).ToString();
-        }
-
-        public static string GetBigIntOrNull(this SqlDataReader reader, int ordinal)
-        {
-            return reader.IsDBNull(ordinal) ? "NULL" : reader.GetInt64(ordinal).ToString();
-        }
-
-        public static string GetTinyIntOrNull(this SqlDataReader reader, int ordinal)
-        {
-            return reader.IsDBNull(ordinal) ? "NULL" : reader.GetByte(ordinal).ToString();
-        }
-    }
     class Program
     {
+        //Sanya prod
         static string sourceConnStr = "Server=tcp:m2ivyiv57e.database.chinacloudapi.cn;Database=waepprod;User ID=readonlyusername;Password=#Bugsfor$;Trusted_Connection=False;Encrypt=True;MultipleActiveResultSets=True;";
 
+        //Global Test Env
         static string targetConnStr = "Server=tcp:maestestwest.database.windows.net;Database=waepci;User ID=testci;Password=passw0rd~1;Trusted_Connection=False;Encrypt=True;MultipleActiveResultSets=True;";
+
+        //Sanya Test Env
+        //static string targetConnStr = "Server=tcp:rnm8u5tnlf.database.chinacloudapi.cn;Database=waepuatvito;User ID=waepmcuat;Password=!Q@W3e4r;Trusted_Connection=False;Encrypt=True;MultipleActiveResultSets=True;";   
+
+        static string insertDay = "getutcdate()";
+        static int insertId = 1;
 
         delegate string GenerateQuery(SqlDataReader reader, string tableName, SqlConnection con = null);
         static void Main(string[] args)
         {
-            //ImportData("Addresses", AddressQuery);
-            //ImportData("BillableItemHybridSKU", BillableItemHybridSKUQuery);
-            //ImportDefaultThresholdNotification();
-            //Importclouds();
-            //ImportData("BillableItems", BillableItemsQuery);
-            //ImportData("ContactInformation", ContactInformationQuery);
-            //ImportData("EnrollmentContactInformation", EnrollmentContactInformationQuery);
-            //ImportData("DiscountGroups", DiscountGroupsQuery);
-            //ImportData("EnrollmentCommitmentTerms", EnrollmentCommitmentTermsQuery);
-            //ImportData("BillableItemHybridSKUMapping", BillableItemHybridSKUMappingQuery);
-            //ImportData("DiscountEnrollments", DiscountEnrollmentsQuery);
-            // ImportData("DiscountServices", DiscountServicesQuery);
-            // ImportData("AgreementParticipants", AgreementParticipantsQuery);
-            //ImportData("EnrollmentCommitmentTermsMarkup", EnrollmentCommitmentTermsMarkupQuery);
-            //ImportData("Departments", DepartmentsQuery);    //todo : need update technicalcontactid
-            //ImportData("Accounts", AccountsQuery);
-            //ImportData("AccountContactInformation", AccountContactInformationQuery);
-            //ImportData("CustomerFeedback", CustomerFeedbackQuery);
-            //ImportData("DepartmentNotifications", DepartmentNotificationsQuery);
-            //ImportData("DepartmentAccounts", DepartmentAccountsQuery);
-            //ImportData("EaCommerceAccounts", EaCommerceAccountsQuery);
-            //ImportData("EnrollmentDepartments", EnrollmentDepartmentsQuery);
-            //ImportData("EnrollmentDiscounts", EnrollmentDiscountsQuery);
-            //ImportData("EnrollmentDiscountVersions", EnrollmentDiscountVersionsQuery);
-            //ImportData("AccountsSubscriptions", AccountsSubscriptionsQuery);
-            //ImportData("DataIntegrityQueue", DataIntegrityQueueQuery);
 
+            #region no dependecies with other 
+            ///Countries, use "44" directly
+            ///2 items
+            //ImportData("Addresses", AddressQuery); 
+
+            ///92 items
+            //ImportData("BillableItemHybridSKU", BillableItemHybridSKUQuery); 
+
+            /// 1 items
+            //ImportDefaultThresholdNotification();  
+
+            ///1 items
+            //Importclouds();    
+
+            ///cloudid, use "4" directly
+            ///select * from billableitems where skutypeid in (4, 8, 10) should return 0.
+            ///select * from billableitems where id != parentbillableitemid ==> 1800
+            ///894 items. 
+            //ImportData("BillableItems", BillableItemsQuery);  
+            //UpdateParentBillableitemId();
+
+            ///Addresses
+            ///Countries
+            ///5 items
+            //ImportData("ContactInformation", ContactInformationQuery);
+
+            ///155 items
+            //ImportData("DiscountGroups", DiscountGroupsQuery);
+
+            ///BillableItemHybridSKU
+            ///BillableItems
+            ///113 items
+            //ImportData("BillableItemHybridSKUMapping", BillableItemHybridSKUMappingQuery);
+
+            ///DiscountGroups
+            ///BillableItems
+            ///953 items
+            //ImportData("DiscountServices", DiscountServicesQuery);
+
+            ///select * from departments where primarycontactid is not null or technicalcontactId is not null --> only return departments with daisy.
+            ///2307 items
+            //ImportData("Departments", DepartmentsQuery);   
+
+            //18 items
+            //ImportData("CustomerFeedback", CustomerFeedbackQuery);
+
+
+            #endregion
+
+            #region one dependency
+
+            ///Enrollments
+            ///ContactInformation
+            ///2 items
+            //ImportData("EnrollmentContactInformation", EnrollmentContactInformationQuery);
+
+            ///Enrollments
+            ///2919 items
+            //ImportData("EnrollmentCommitmentTerms", EnrollmentCommitmentTermsQuery);
+
+            ///Enrollments
+            ///6772 items
+            //ImportData("DiscountEnrollments", DiscountEnrollmentsQuery);
+
+            ///Users
+            ///6030 items
+            //ImportData("Accounts", AccountsQuery);
+
+            //Enrollments
+            ///2307 items
+            //ImportData("EnrollmentDepartments", EnrollmentDepartmentsQuery);
+            #endregion
+
+            #region two dependecies
+            ///Enrollments
+            ///Organizations
+            ///5490 items
+            //ImportData("AgreementParticipants", AgreementParticipantsQuery);
+
+            #endregion
+
+            ///Enrollments
+            ///Organizations
+            ///EnrollmentCommitmentTerms
+            ///62 items
+            //ImportData("EnrollmentCommitmentTermsMarkup", EnrollmentCommitmentTermsMarkupQuery);
+
+            ///Account
+            ///ContactInfo
+            ///2 items
+            //ImportData("AccountContactInformation", AccountContactInformationQuery);
+
+            ///Accounts
+            ///Departments
+            ///3508 items
+            //ImportData("DepartmentAccounts", DepartmentAccountsQuery);
+
+            ///Accounts
+            ///4553 items
+            //ImportData("EaCommerceAccounts", EaCommerceAccountsQuery);
+
+
+            ///check select * from PriceAdjustmentTypes id = 5
+            ///check select * from ExceptionLists --> only one returned
+            ///26 items
+            //ImportData("EnrollmentDiscounts", EnrollmentDiscountsQuery);
+
+            ///EnrollmentDiscounts
+            ///Users
+            ///27 items
+            //ImportData("EnrollmentDiscountVersions", EnrollmentDiscountVersionsQuery);
+
+            ///Accounts
+            ///Subscriptions
+            ///11747 items
+            //ImportData("AccountsSubscriptions", AccountsSubscriptionsQuery);
+
+            ImportData("BillableItemPrices", BillableItemPricesQuery, new List<int>() { -1, 215, 225});
+
+            ///-----------------------------------------------------------------------------------------
+            //ImportData("DataIntegrityQueue", DataIntegrityQueueQuery);
+            //ImportData("DepartmentNotifications", DepartmentNotificationsQuery);
             //ImportData("Subscriptions", SubscriptionsQuery);
             //UpdateItem("Subscriptions", "Name", 748048);
             //UpdateItem("Departments", "Name", 63714);
@@ -102,6 +160,45 @@ namespace WaepImporter
             //ImportData("AccountsSubscriptions", AccountsSubscriptionsQuery, new List<int>() { 17352, 17354, 17357, 17359, 17364, 17375, 19395, 19396, 19397, 19398, 19399, 19400, 19401, 19402 });
         }
 
+        static void UpdateParentBillableitemId()
+        {
+            SqlConnection globalConn = new SqlConnection(targetConnStr);
+            SqlCommand selectCmd = new SqlCommand("select newId, oldId from _Mapping where objName = 'Billableitems' order by oldId", globalConn);
+            globalConn.Open();
+            SqlDataReader reader = selectCmd.ExecuteReader();
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter(@"C:\Users\lidai\Desktop\WaepImporter\WaepImporter\failuresUpdateParentBillableItemId.txt", true))
+            {
+                if (reader.HasRows)
+                {
+                    try
+                    {
+                        int itemHasDiffBillId = -1;
+                        while (reader.Read())
+                        {
+                            int newId = reader.GetInt32(0);
+                            int oldId = reader.GetInt32(1);
+                            if (oldId == 364)
+                            {
+                                itemHasDiffBillId = newId;
+                            }
+
+                            SqlCommand updateCmd = new SqlCommand(string.Format("Update Billableitems set parentbillableitemid = {0} where id = {1}", oldId == 1800 ? itemHasDiffBillId : newId, newId), globalConn);
+                            updateCmd.ExecuteReader();
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(string.Format("failed to update id {0}", reader.GetInt32(0), e.Message));
+                        file.WriteLine(string.Format("failed to update id {0}", reader.GetInt32(0), e.Message));
+                    }
+
+                }
+                globalConn.Close();
+            }
+
+
+
+        }
         static void UpdateItem(string table, string item, int index)
         {
             SqlConnection srcConn = new SqlConnection(sourceConnStr);
@@ -138,6 +235,42 @@ namespace WaepImporter
             tarConn.Close();
             srcConn.Close();
         }
+
+
+        static string BillableItemPricesQuery(SqlDataReader reader, string tableName, SqlConnection connect = null)
+        {
+            Dictionary<string, string> oldIds = new Dictionary<string, string>();
+            oldIds.Add("Enrollment", reader.GetIntOrNull(1));
+            oldIds.Add("BillableItems", reader.GetIntOrNull(2));
+
+            var newIds = GetNewIds(oldIds, connect);
+            string enrollmentId = newIds["Enrollment"];
+            string billableitemId = newIds["BillableItems"];
+            var val = string.Format(@"Declare @r Table (id bigint); Insert into [dbo].[{0}] output Inserted.Id into @r values( {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14}, {15}, {16}, {17}, {18}, {19}, {20}); select id from @r",
+            tableName,
+            enrollmentId,   
+            billableitemId,
+            reader.GetStringOrNull(3),  //PartNumber
+            9,   //CurrencyId
+            reader.GetDateOrNull(5),    //StartsOn
+            reader.GetDateOrNull(6),    //EndsOn
+            reader.GetTinyIntOrNull(7),    //BillableItemTypeId
+            reader.GetDecimalOrNull(8),    //Price
+            reader.GetTinyIntOrNull(9),    //AdjustmentTypeId
+            reader.GetTinyIntOrNull(10),    //TierTypeId
+            reader.GetDecimalOrNull(11),    //NormalizedPrice
+            reader.GetTinyIntOrNull(12),    //SourceTypeId
+            reader.GetBigIntOrNull(13),    //SourceKey
+            reader.GetDecimalOrNull(14),    //OriginalPrice
+            reader.GetBigIntOrNull(15),    //Ineligible
+            insertDay,
+            insertId,
+            insertDay,
+            insertId,
+            reader.GetStringOrNull(20)   //Comments
+            );
+            return val;
+        }
         static string SubscriptionsQuery(SqlDataReader reader, string tableName, SqlConnection connect = null)
         {
             Dictionary<string, string> oldIds = new Dictionary<string, string>();
@@ -158,10 +291,10 @@ namespace WaepImporter
             reader.GetGuidOrNull(7),    //MOCPSubscriptionGuid
             reader.GetStringOrNull(8),    //OfferName
             reader.GetIntOrNull(9),    //StatusId
-            "getutcdate()",
-            "1",
-            "getutcdate()",
-            "1",
+            insertDay,
+            insertId,
+            insertDay,
+            insertId,
             reader.GetDateOrNull(14),   //BisLastUpdated
             reader.GetStringOrNull(15),   //SuspensionReason
             reader.GetIntOrNull(16),    //TransferState
@@ -189,8 +322,8 @@ namespace WaepImporter
             reader.GetStringOrNull(2),  //Key
             definitionId,   //DataIntegrityDefinitionId
             reader.GetStringOrNull(4),   //Comments
-            "1",
-            "getutcdate()",
+            insertId,
+            insertDay,
             reader.GetIntOrNull(7)   //StatusId
             );
             return val;
@@ -210,10 +343,10 @@ namespace WaepImporter
             reader.GetIntOrNull(3),   //ThresholdPct
             reader.GetIntOrNull(4),   //MessageId
             reader.GetBooleanOrNull(5),    //IsDeleted
-            "getutcdate()",
-            "1",
-            "getutcdate()",
-            "1"
+            insertDay,
+            insertId,
+            insertDay,
+            insertId
             );
             return val;
         }
@@ -233,10 +366,10 @@ namespace WaepImporter
             subscriptionId,
             reader.GetDateOrNull(3),   //StartsOn
             reader.GetDateOrNull(4),  //EndsOn
-            "getutcdate()",
-            "1",
-            "getutcdate()",
-            "1"
+            insertDay,
+            insertId,
+            insertDay,
+            insertId
             );
             return val;
         }
@@ -259,10 +392,10 @@ namespace WaepImporter
             reader.GetDecimalOrNull(7),    //DiscountRate
             reader.GetIntOrNull(8),    //StatusId
             reader.GetIntOrNull(9),    //Version
-            "getutcdate()",
-            "getutcdate()",
-            "1",
-            "1"
+            insertDay,
+            insertDay,
+            insertId,
+            insertId
             );
             return val;
         }
@@ -289,10 +422,10 @@ namespace WaepImporter
             userId,    //ReviewedBy
             reader.GetStringOrNull(11),    //ReviewComments
             reader.GetStringOrNull(12),    //TFSHistory
-            "getutcdate()",
-            "getutcdate()",
-            "1",
-            "1",
+            insertDay,
+            insertDay,
+            insertId,
+            insertId,
             reader.GetIntOrNull(17)//Version
             );
             return val;
@@ -313,10 +446,10 @@ namespace WaepImporter
             enrollmentId,
             reader.GetDateOrNull(3),   //StartsOn
             reader.GetDateOrNull(4),  //EndsOn
-            "getutcdate()",
-            "1",
-            "getutcdate()",
-            "1"
+            insertDay,
+            insertId,
+            insertDay,
+            insertId
             );
             return val;
         }
@@ -335,10 +468,10 @@ namespace WaepImporter
             reader.GetGuidOrNull(3),   //OrgObjectId
             reader.GetGuidOrNull(4),  //CommerceAccountId
             reader.GetIntOrNull(5),    //StatusId
-            "getutcdate()",
-            "1",
-            "getutcdate()",
-            "1",
+            insertDay,
+            insertId,
+            insertDay,
+            insertId,
             reader.GetIntOrNull(10),    //Version
             reader.GetBooleanOrNull(11)  //RevertAccount
             );
@@ -360,10 +493,10 @@ namespace WaepImporter
             accountId,
             reader.GetDateOrNull(3),   //StartsOn
             reader.GetDateOrNull(4),  //EndsOn
-            "getutcdate()",
-            "1",
-            "getutcdate()",
-            "1"
+            insertDay,
+            insertId,
+            insertDay,
+            insertId
             );
             return val;
         }
@@ -375,10 +508,10 @@ namespace WaepImporter
                 reader.GetStringOrNull(1),  //FromEmail
                 reader.GetStringOrNull(2),    //Body
                 reader.GetStringOrNull(3),   //Title
-                "getutcdate()",  //CreatedOn
-                "getutcdate()",    //ModifiedOn
-                "1",  //CreatedBy
-                "1",  //ModifiedBy
+                insertDay,  //CreatedOn
+                insertDay,    //ModifiedOn
+                insertId,  //CreatedBy
+                insertId,  //ModifiedBy
                 reader.GetIntOrNull(8)   //StatusId
                 );
             return val;
@@ -425,10 +558,10 @@ namespace WaepImporter
             reader.GetBigIntOrNull(11), //SpendingQuota
             reader.GetDateOrNull(12), // EffectiveStartDate
             reader.GetDateOrNull(13), //EffectiveEndDate
-            "getutcdate()",
-            "1",
-            "getutcdate()",
-            "1",
+            insertDay,
+            insertId,
+            insertDay,
+            insertId,
             parentId,
             reader.GetStringOrNull(19)  //Description
             );
@@ -451,10 +584,10 @@ namespace WaepImporter
             reader.GetStringOrNull(5), //AccountPUID
             reader.GetIntOrNull(6), //StatusId
             reader.GetBooleanOrNull(7), //IsOrgIdPUID
-            "getutcdate()",
-            "1",
-            "getutcdate()",
-            "1",
+            insertDay,
+            insertId,
+            insertDay,
+            insertId,
             reader.GetIntOrNull(12),  //MospConversionStatus
             reader.GetGuidOrNull(13),  //TenantId
             reader.GetGuidOrNull(14),   //OrgObjectId
@@ -485,10 +618,10 @@ namespace WaepImporter
             enrollmentCommitmentTermsId,
             reader.GetStringOrNull(4),
             reader.GetIntOrNull(5),
-            "getutcdate()",
-            "1",
-            "getutcdate()",
-            "1"
+            insertDay,
+            insertId,
+            insertDay,
+            insertId
             );
             return val;
         }
@@ -516,10 +649,10 @@ namespace WaepImporter
             reader.GetDateOrNull(10), //EndsOn
             reader.GetDateOrNull(11), //SourceModifiedDate
             reader.GetIntOrNull(12), // Version
-            "getutcdate()",
-            "1",
-            "getutcdate()",
-            "1",
+            insertDay,
+            insertId,
+            insertDay,
+            insertId,
             reader.GetStringOrNull(17) // AgreementParticipantMslId
             );
             return val;
@@ -543,10 +676,10 @@ namespace WaepImporter
             reader.GetDecimalOrNull(5), //Multiplier
             reader.GetDateOrNull(6), //StartsOn
             reader.GetDateOrNull(7), //EndsOn
-            "1",
-            "getutcdate()",
-            "1",
-            "getutcdate()"
+            insertId,
+            insertDay,
+            insertId,
+            insertDay
             );
             return val;
         }
@@ -563,10 +696,10 @@ namespace WaepImporter
             tableName,
             groupId,
             enrollmentId,
-            "1",
-            "getutcdate()",
-            "1",
-            "getutcdate()"
+            insertId,
+            insertDay,
+            insertId,
+            insertDay
             );
             return val;
         }
@@ -587,10 +720,10 @@ namespace WaepImporter
             reader.GetDecimalOrNull(3),   //IncludedRatio
             reader.GetDateOrNull(4),  //StartsOn
             reader.GetDateOrNull(5), //EndsOn
-            "1",
-            "getutcdate()",
-            "1",
-            "getutcdate()"
+            insertId,
+            insertDay,
+            insertId,
+            insertDay
             );
             return val;
         }
@@ -607,8 +740,8 @@ namespace WaepImporter
                 reader.GetDateOrNull(2),  //TermStartDate
                 reader.GetDateOrNull(3),   //TermEndDate
                 reader.GetStringOrNull(4),  //FormattedTermDate
-                "getutcdate()",
-                "getutcdate()"
+                insertDay,
+                insertDay
                 );
             return val;
         }
@@ -620,10 +753,10 @@ namespace WaepImporter
                 reader.GetIntOrNull(2),
                 reader.GetDecimalOrNull(3),
                 reader.GetIntOrNull(4),
-                "1",
-                "getutcdate()",
-                "1",
-                "getutcdate()"
+                insertId,
+                insertDay,
+                insertId,
+                insertDay
                 );
             return val;
         }
@@ -632,16 +765,16 @@ namespace WaepImporter
         {
             var val = string.Format(@"Insert into [dbo].[{0}] output Inserted.Id values( {1}, {2}, {3}, {4}, {5}, {6},{7}, {8}, {9}, {10});",
                 tableName,
-                reader.GetStringOrNull(1),
-                reader.GetStringOrNull(2),
-                reader.GetStringOrNull(3),
-                reader.GetStringOrNull(4),
-                reader.GetStringOrNull(5),
-                "44",
-                "getutcdate()",
-                "1",
-                "getutcdate()",
-                "1");
+                reader.GetStringOrNull(1),   //AddressLine1
+                reader.GetStringOrNull(2),   //AddressLine2
+                reader.GetStringOrNull(3),   //City
+                reader.GetStringOrNull(4),  //StateProvince
+                reader.GetStringOrNull(5),   //PostCode
+                "44",  //CountryId
+                insertDay,
+                insertId,
+                insertDay,
+                insertId);
             return val;
         }
 
@@ -649,16 +782,16 @@ namespace WaepImporter
         {
             var val = string.Format(@"Declare @r Table (id int); Insert into [dbo].[{0}] output Inserted.Id into @r values( {1}, {2}, {3}, {4}, {5}, {6},{7}, {8}, {9}, {10}); select id from @r",
                 tableName,
-                reader.GetStringOrNull(1),
-                reader.GetStringOrNull(2),
-                reader.GetDateOrNull(3),
-                reader.GetDateOrNull(4),
-                "1",
-                "getutcdate()",
-                "1",
-                "getutcdate()",
-                reader.GetBooleanOrNull(9),
-                reader.IsDBNull(10) ? "NULL" : "1"
+                reader.GetStringOrNull(1),  //Name
+                reader.GetStringOrNull(2),   //PartNumber
+                reader.GetDateOrNull(3),  //StartsOn
+                reader.GetDateOrNull(4),   //EndsOn
+                insertId,
+                insertDay,
+                insertId,
+                insertDay,
+                reader.GetBooleanOrNull(9),   //Deleted
+                reader.IsDBNull(10) ? "NULL" : insertId.ToString()   //DeletedBy
                 );
             return val;
         }
@@ -679,10 +812,10 @@ namespace WaepImporter
                 reader.GetDecimalOrNull(9),  //MocpResourcesPerUnit
                 reader.GetStringOrNull(10), //UnitOfMeasure
                 reader.GetBooleanOrNull(11), //HasCommitmentOffer
-                "1",
-                "getutcdate()",
-                "1",
-                "getutcdate()",
+                insertId,
+                insertDay,
+                insertId,
+                insertDay,
                 reader.GetStringOrNull(16), //NewCommitmentPartNumber
                 reader.GetStringOrNull(17),  //NewCommitmentName
                 reader.GetStringOrNull(18),   //NewConsumptionPartNumber
@@ -693,7 +826,7 @@ namespace WaepImporter
                 reader.GetBooleanOrNull(23), //IsMonetaryCommitmentService
                 reader.GetIntOrNull(24),        //WorkflowStatus
                 reader.GetGuidOrNull(25),                  //WorkflowInstanceId
-                reader.IsDBNull(26) ? "NULL" : "1",         //ReviewedBy
+                reader.IsDBNull(26) ? "NULL" : insertId.ToString(),         //ReviewedBy
                 reader.GetStringOrNull(27),   //ReviewComments
                 reader.GetSmallIntOrNull(28),    //SkuTypeId
                 reader.GetStringOrNull(29), //TFSHistory
@@ -727,10 +860,10 @@ namespace WaepImporter
                 reader.GetStringOrNull(10),   //City 
                 reader.GetStringOrNull(11),  //State
                 reader.GetStringOrNull(12),  //PostalCode
-                "getutcdate()",
-                "1",
-                "getutcdate()",
-                "1",
+                insertDay,
+                insertId,
+                insertDay,
+                insertId,
                 reader.IsDBNull(17) ? "NULL" : "44",
                 addressId);
             return val;
@@ -789,7 +922,7 @@ namespace WaepImporter
                     {
                         while (reader.Read())
                         {
-                            retVal.Add(entry.Key, reader.GetIntOrNull(0));
+                            retVal.Add(entry.Key, reader.GetBigIntOrNull(0));
                             break;
                         }
                     }
@@ -834,15 +967,19 @@ namespace WaepImporter
             SqlConnection tarConn = new SqlConnection(targetConnStr);
 
             SqlCommand selectCmd;
-            if (ids == null)
+            if (ids == null)   // select all
             {
-                selectCmd = new SqlCommand(string.Format("select * from [dbo].[{0}] where id > 12867 and id < 14697 order by id", tableName), srcConn);
+                selectCmd = new SqlCommand(string.Format("select * from [dbo].[{0}] order by id", tableName), srcConn);
+            }
+            else if (ids[0] == -1)
+            {
+                selectCmd = new SqlCommand(string.Format("select * from [dbo].[{0}] where id >= {1} and id <= {2} order by id", tableName, ids[1], ids[2]), srcConn);
             }
             else
             {
                 selectCmd = new SqlCommand(string.Format("select * from [dbo].[{0}] where id in ({1})", tableName, string.Join(",", ids)), srcConn);
             }
-            
+
             srcConn.Open();
             SqlDataReader reader = selectCmd.ExecuteReader();
             using (System.IO.StreamWriter file = new System.IO.StreamWriter(@"C:\Users\lidai\Desktop\WaepImporter\WaepImporter\failures.txt", true))
@@ -851,7 +988,9 @@ namespace WaepImporter
                 {
                     tarConn.Open();
                     int failCount = 0;
-
+                    int successCount = 0;
+                    Stopwatch stopwatch = new Stopwatch();
+                    stopwatch.Start();
                     while (reader.Read())
                     {
                         try
@@ -859,23 +998,27 @@ namespace WaepImporter
                             string query = fun(reader, tableName, tarConn);
                             SqlCommand insertCmd = new SqlCommand(query, tarConn);
 
-                            int oldId = (tableName == "DataIntegrityQueue" || tableName == "Subscriptions") ? int.Parse(reader.GetBigIntOrNull(0)) : reader.GetInt32(0);
-                            int newId = int.Parse(insertCmd.ExecuteScalar().ToString());
+                            int oldId = (tableName == "DataIntegrityQueue" || tableName == "Subscriptions" || tableName == "BillableItemPrices") ? int.Parse(reader.GetBigIntOrNull(0)) : reader.GetInt32(0);
+                            Int64 newId = Int64.Parse(insertCmd.ExecuteScalar().ToString());
 
                             SqlCommand insertMappingCmd = new SqlCommand(string.Format("insert into _Mapping values ('{0}', {1}, {2})", tableName, oldId, newId), tarConn);
                             insertMappingCmd.ExecuteNonQuery();
+                            successCount++;
                             //Console.WriteLine(string.Format("table: {0}, oldId: {1}, newId: {2}", tableName, oldId, newId));
                         }
                         catch (Exception e)
                         {
-                            int oldId = (tableName == "DataIntegrityQueue" || tableName == "Subscriptions") ? int.Parse(reader.GetBigIntOrNull(0)) : reader.GetInt32(0);
+                            int oldId = (tableName == "DataIntegrityQueue" || tableName == "Subscriptions" || tableName == "BillableItemPrices") ? int.Parse(reader.GetBigIntOrNull(0)) : reader.GetInt32(0);
                             Console.WriteLine(string.Format("failed to import id {0} of table {1}, {2}", oldId, tableName, e.Message));
                             file.WriteLine(string.Format("failed to import id {0} of table {1}, {2}", oldId, tableName, e.Message));
                             failCount++;
                         }
                     }
+                    stopwatch.Stop();
+                    long elapsedSeconds = (long)stopwatch.Elapsed.TotalSeconds;
+
                     tarConn.Close();
-                    file.WriteLine(string.Format("Table: {0}, Total failure counts: {1}", tableName, failCount));
+                    file.WriteLine(string.Format("Table: {0}, failure counts: {1}, success counts: {2}, elapseTime: {3}", tableName, failCount, successCount, elapsedSeconds));
                 }
             }
             srcConn.Close();
